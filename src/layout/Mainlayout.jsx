@@ -11,12 +11,12 @@ function Mainlayout() {
     <div style={styles.layout}>
       <Header />
       <div style={styles.contentWrapper}>
-        <Sidebar />
+        
            
         <main style={styles.main}>
-         
+         <Outlet />
         </main>
-        <Outlet />
+        
       </div>
       
       <Footer />

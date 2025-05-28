@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function Sidebar() {
   return (
-    <aside className="w-[220px] bg-white border-r border-gray-200 p-4 flex flex-col min-h-screen">
+    <aside className="w-[220px] bg-white border-r border-gray-200 p-4 flex flex-col h-full">
       <div className="flex flex-col items-center mb-6">
         <img
           src="https://cdn-icons-png.flaticon.com/512/295/295128.png"
