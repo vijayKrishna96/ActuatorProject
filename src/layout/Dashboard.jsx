@@ -7,7 +7,7 @@ import S54sensor from "../pages/S54sensor";
 import S5Xmonitor from "../pages/S5Xmonitor";
 
 const Dashboard = () => {
-  const [activeTab, setActiveTab] = useState("Home");  // Manage the active tab
+  const [activeTab, setActiveTab] = useState("Home");  
 
   // Function to render the corresponding component based on the active tab
   const renderView = () => {
