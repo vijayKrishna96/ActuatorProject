@@ -1,11 +1,9 @@
-import React from "react";
+import React from 'react'
 
-function S5XMonitor() {
-    return(
-        <div>
-            <h1>S5XMonitor</h1>
-        </div>
-    )
+function S5Xmonitor() {
+  return (
+    <div>S5Xmonitor</div>
+  )
 }
 
-export default S5XMonitor;
+export default S5Xmonitor
