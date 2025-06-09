@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import {
   LayoutDashboard,
   Wrench,
@@ -7,8 +7,10 @@ import {
   Monitor,
 } from "lucide-react";
 import SidebarItem from "./SidebarItem";
+import { AuthContext } from "../config/AuthComtext";
 
 export default function Sidebar({ setActiveTab, activeTab }) {
+  const {logout , user} = useContext(AuthContext)
   return (
     <aside className="w-[220px] bg-white border-r border-gray-200 p-4 flex flex-col min-h-screen">
       {/* Profile and Sign Out */}
@@ -18,7 +20,12 @@ export default function Sidebar({ setActiveTab, activeTab }) {
           alt="Profile"
           className="w-20 h-20 rounded-full border mb-2"
         />
-        <button className="mt-5 px-4 py-1 border rounded text-sm text-[#08549c] border-[#08549c] hover:bg-[#08549c] hover:text-white transition">
+        <h2 className="text-lg font-bold">Welcome</h2>
+        {user && <p className="text-sm text-gray-600">{user.name}</p>}
+        
+        <button 
+        onClick={logout}
+        className="mt-5 px-4 py-1 border rounded text-sm text-[#08549c] border-[#08549c] hover:bg-[#08549c] hover:text-white transition">
           Sign Out
         </button>
         <p className="mt-5 text-xs text-gray-500">
