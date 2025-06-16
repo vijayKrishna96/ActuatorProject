@@ -48,6 +48,12 @@ export default function Sidebar({ setActiveTab, activeTab }) {
           onClick={() => setActiveTab("Actuator Sizing")}
         />
         <SidebarItem
+          icon={<Wrench size={18} />}
+          label="S98 Part#"
+          isActive={activeTab === "S98Part"}
+          onClick={() => setActiveTab("S98Part")}
+        />
+        <SidebarItem
           icon={<ListFilter size={18} />}
           label="Part# Decode"
           isActive={activeTab === "Part# Decode"}

@@ -6,6 +6,8 @@ import PartDecode from "../pages/PartDecode";
 import S54sensor from "../pages/S54sensor";
 import S5Xmonitor from "../pages/S5Xmonitor";
 
+import ValveConfigInterface from "../pages/ValveConfig";
+
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("Home");  
 
@@ -16,6 +18,8 @@ const Dashboard = () => {
         return <Home/>;
       case "Actuator Sizing":
         return <ActuatorSizing />;
+      case "S98Part":
+        return <ValveConfigInterface/>
       case "Part# Decode":
         return <PartDecode />;
       case "SS4 Sensor":
