@@ -11,7 +11,7 @@ const EditableSelect = ({
   const [inputValue, setInputValue] = useState(value || defaultValue || "");
 
   useEffect(() => {
-    if (value !== undefined) {
+    if (value !== undefined && value !== inputValue) {
       setInputValue(value);
     }
   }, [value]);
@@ -53,7 +53,7 @@ const FormField = ({
     <p
       className={
         label.includes("Unit Type") || label.includes("Stem Diameter")
-          ? "text-[#08549c] font-semibold"
+          ? "text-[#08549c] font-semibold text-[12px]"
           : ""
       }
     >
@@ -154,7 +154,7 @@ const FailSafeCondition = ({ formData, handleFormFieldChange }) => (
   </div>
 );
 
-export default function ActuatorSizing() {
+export default function ActuatorSizing({setActiveTab , setShowDatasheet}) {
   const [showButtons, setShowButtons] = useState(false);
   const [valueCount, setValueCount] = useState(6);
   const [valveTypes, setValveTypes] = useState([]);
@@ -192,6 +192,13 @@ export default function ActuatorSizing() {
   const handleChange = (e) => {
     const selected = parseInt(e.target.value);
     setValueCount(selected);
+  };
+
+  const handleActuatorConfiguration = () => {
+    console.log("handleActuatorConfiguration");
+    // Navigate to S98Part tab which shows ValveConfigInterface
+    setActiveTab("S98Part");
+    setShowDatasheet(true);
   };
 
   const actuatorSeries = ["S98 - Pneumatic Scotch Yoke Actuator"];
@@ -387,6 +394,8 @@ export default function ActuatorSizing() {
     showAlert("All data cleared successfully!", "info");
   };
 
+  
+
   useEffect(() => {
     fetch("http://localhost:5000/api/valve")
       .then((res) => {
@@ -434,7 +443,7 @@ export default function ActuatorSizing() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 bg-gray-100 text-[12px] font-sans min-h-screen">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4  text-[12px] font-sans min-h-screen">
       {/* Alert Component */}
       {alert && (
         <Alert
@@ -449,11 +458,11 @@ export default function ActuatorSizing() {
         <div className="flex justify-between items-start">
           <div className="w-[50%] text-black">
             <div className="flex justify-between items-center mb-2">
-              <p className="text-sm font-bold text-[#08549c]">
+              <p className=" font-bold text-[#08549c] text-[12px] ">
                 Default Sizing Units
               </p>
               <button
-                className="bg-[#08549c] hover:bg-blue-800 text-white px-4 py-1 rounded text-sm"
+                className="bg-[#08549c] hover:bg-blue-800 text-white px-4 py-1 rounded text-[12px]"
                 onClick={clearAllData}
               >
                 Clear All
@@ -486,12 +495,12 @@ export default function ActuatorSizing() {
                 className="flex items-center justify-between mt-10"
               >
                 <div className="flex items-center space-x-3">
-                  <label className="flex items-center space-x-1">
-                    <input type="radio" name="stemUnit" defaultChecked/>
+                  <label className="flex items-center space-x-1 ">
+                    <input type="radio" name="stemUnit" />
                     <span>Inch</span>
                   </label>
                   <label className="flex items-center space-x-1">
-                    <input type="radio" name="stemUnit"  />
+                    <input type="radio" name="stemUnit" defaultChecked />
                     <span>Metric</span>
                   </label>
                   <input
@@ -505,18 +514,18 @@ export default function ActuatorSizing() {
         </div>
       </div>
       {/* /* Actuator Selector - Original */}
-      <div className="bg-white p-4 shadow-lg rounded-lg space-y-4 text-[#8c001a]">
-        <h2 className="font-bold text-lg">Actuator Selector</h2>
+      <div className="bg-white p-4 shadow-lg rounded-lg space-y-4 text-[#0D47A1] text-[12px]">
+        <h2 className="font-bold ">Actuator Selector</h2>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
             <div className="grid grid-cols-2 gap-4 mb-5">
               {/* Supply Pressure */}
               <div>
-                <label className="font-bold block mb-2">Supply Pressure:</label>
+                <label className="font-semibold block mb-2 text-[12px]">Supply Pressure:</label>
                 <div className="flex items-center gap-2">
                   <select
-                    className="bg-[#d9d9d9] text-gray-700 px-2 py-1 rounded w-[100px]"
+                    className="bg-[#d9d9d9] text-[#0D47A1] px-2 py-1 rounded w-[100px]"
                     value={formData.supplyPressure}
                     onChange={(e) =>
                       handleFormFieldChange("supplyPressure", e.target.value)
@@ -534,11 +543,11 @@ export default function ActuatorSizing() {
               </div>
               {/* Actuator Type Selection */}
               <div className="mt-6">
-                <label className="font-bold block mb-2 text-[#8c001a]">
+                <label className="font-semibold block mb-2 text-[#0D47A1] text-[12px]">
                   Actuator Type:
                 </label>
                 <div className="flex flex-col text-black space-y-1">
-                  <label className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-[12px]">
                     <input
                       type="radio"
                       name="actuatorType"
@@ -550,7 +559,7 @@ export default function ActuatorSizing() {
                     />
                     Spring Return
                   </label>
-                  <label className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-[12px]">
                     <input
                       type="radio"
                       name="actuatorType"
@@ -568,11 +577,11 @@ export default function ActuatorSizing() {
 
             {/* Yoke Type */}
             <div className="flex items-center space-x-4 border border-gray-400 rounded p-3 w-fit">
-              <label className="font-bold text-[#8c001a]">Yoke Type:</label>
+              <label className="font-semibold text-[#0D47A1] text-[12px]">Yoke Type:</label>
               {["Preferred", "Symmetric", "Canted"].map((type) => (
                 <label
                   key={type}
-                  className="flex items-center gap-2 text-black"
+                  className="flex items-center gap-2 text-black text-[12px]"
                 >
                   <input
                     type="radio"
@@ -610,10 +619,10 @@ export default function ActuatorSizing() {
         <div className="grid grid-cols-2 gap-4">
           {/* Actuator Selected */}
           <div>
-            <label className="font-bold block mb-2 text-[#8c001a]">
+            <label className="font-semibold block mb-2 text-[#0D47A1] text-[12px]">
               Actuator Selected
             </label>
-            <div className="space-y-2 text-black">
+            <div className="space-y-2 text-black text-[12px]">
               <div className="flex items-center gap-2">
                 <label className="w-[120px]">Actuator Model</label>
                 <input
@@ -637,10 +646,10 @@ export default function ActuatorSizing() {
             />
           ) : (
             <div>
-              <label className="font-bold block mb-2 text-[#8c001a]">
-                Actuator Configuration
+              <label className="font-bold block mb-2 text-[#0D47A1] text-[12px]">
+                Actuator Configurator
               </label>
-              <div className="flex flex-col space-y-1 text-black">
+              <div className="flex flex-col space-y-1 text-black text-[12px]">
                 <label className="flex items-center gap-2">
                   <input
                     type="radio"
@@ -674,14 +683,16 @@ export default function ActuatorSizing() {
           {/* Select Button */}
           <div className="mt-4">
             <button
-              className="bg-[#8c001a] text-white px-6 py-2 rounded font-semibold hover:bg-[#6e0016]"
+              className="bg-[#0D47A1] text-white px-6 py-2 rounded font-semibold hover:bg-[#5e4b91]"
               onClick={() => setShowButtons(true)}
             >
               Select Actuator
             </button>
             {showButtons && (
               <div className="flex gap-4 mt-4">
-                <button className="bg-[#8c001a] text-white px-4 py-2 rounded font-semibold hover:bg-[#6e0016]">
+                <button className="bg-[#0D47A1] text-white px-4 py-2 rounded font-semibold hover:bg-[#0d52a1]"
+                onClick={handleActuatorConfiguration}
+                >
                   Actuator Configuration
                 </button>
               </div>
@@ -726,7 +737,7 @@ export default function ActuatorSizing() {
                 Value Torques
               </label>
               <select
-                className="w-36 h-7 bg-gray-100 border rounded px-2 ml-2"
+                className="w-36 h-7 bg-gray-100 border-none rounded px-2 ml-2"
                 onChange={handleChange}
                 value={valueCount}
               >
@@ -756,7 +767,7 @@ export default function ActuatorSizing() {
                       ? handleBreakToOpenBlur
                       : undefined
                   }
-                  className={`w-24 h-7 bg-gray-200 rounded border ml-[1px] ${
+                  className={`w-24 h-7 bg-gray-200 rounded border-none ml-[1px] ${
                     label === "Break to Open" && isAutoPopulating
                       ? "bg-yellow-100"
                       : ""

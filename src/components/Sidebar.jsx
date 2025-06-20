@@ -7,9 +7,10 @@ import {
   Monitor,
 } from "lucide-react";
 import SidebarItem from "./SidebarItem";
-import { AuthContext } from "../config/AuthComtext";
+import { AuthContext } from "../config/AuthContext";
 
-export default function Sidebar({ setActiveTab, activeTab }) {
+
+export default function Sidebar({ setActiveTab, activeTab , showDatasheet}) {
   const {logout , user} = useContext(AuthContext)
   return (
     <aside className="w-[220px] bg-white border-r border-gray-200 p-4 flex flex-col min-h-screen">
@@ -74,11 +75,18 @@ export default function Sidebar({ setActiveTab, activeTab }) {
       </nav>
 
       {/* Datasheet Button */}
-      <div className="flex justify-center mt-4">
-        <button className="bg-[#08549c] text-white w-[90px] h-[40px] rounded-[3px] cursor-pointer hover:bg-blue-900">
-          <a href="Login.jsx">Datasheet</a>
-        </button>
-      </div>
+      {showDatasheet && (
+        <div className="flex justify-center mt-4">
+          <button 
+            className={`bg-[#08549c] text-white w-[90px] h-[40px] rounded-[3px] cursor-pointer hover:bg-blue-900 ${
+              activeTab === "Data Sheet" ? "bg-blue-900" : ""
+            }`}
+            onClick={() => setActiveTab("Data Sheet")}
+          >
+            Datasheet
+          </button>
+        </div>
+      )}
     </aside>
   );
 }

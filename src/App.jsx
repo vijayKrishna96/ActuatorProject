@@ -3,8 +3,8 @@ import "./App.css";
 import Mainlayout from "./layout/Mainlayout";
 import Dashboard from "./layout/Dashboard";
 import { useContext } from "react";
-import { AuthContext } from "./config/AuthComtext";
 import Login from "./components/Login";
+import { AuthContext } from "./config/AuthContext";
 
 
 function App() {
