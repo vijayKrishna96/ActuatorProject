@@ -67,82 +67,84 @@ const DatasheetPDFGenerator = () => {
   };
 
   const generatePDF = async () => {
-    const container = document.getElementById("datasheet-container");
+  const container = document.getElementById("datasheet-container");
 
-    try {
-      // Create PDF
-      const pdf = new jsPDF("p", "mm", "a4");
+  try {
+    // Create PDF
+    const pdf = new jsPDF("p", "mm", "a4");
 
-      // Increase scale for better quality
-      const scale = 2;
+    // Set a higher scale for better quality
+    const scale = 2;
 
-      // Capture the entire datasheet as one image
-      const canvas = await html2canvas(container, {
-        scale: scale,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#ffffff",
-        width: container.scrollWidth,
-        height: container.scrollHeight,
-        scrollX: 0,
-        scrollY: 0,
-        logging: true,
-        letterRendering: true,
-      });
+    // Capture the entire datasheet as one image
+    const canvas = await html2canvas(container, {
+      scale: scale,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: "#ffffff",
+      width: container.scrollWidth,
+      height: container.scrollHeight,
+      scrollX: 0,
+      scrollY: 0,
+      logging: false,
+      letterRendering: true,
+    });
 
-      const imgData = canvas.toDataURL("image/png");
-      const imgWidth = 210; // A4 width in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      // Check if content fits on one page
-      if (imgHeight <= 297) {
-        // A4 height in mm
-        pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-      } else {
-        // Scale down to fit on one page
-        const scaledHeight = 297;
-        const scaledWidth = (canvas.width * scaledHeight) / canvas.height;
-        pdf.addImage(
-          imgData,
-          "PNG",
-          (210 - scaledWidth) / 2,
-          0,
-          scaledWidth,
-          scaledHeight
-        );
-      }
-
-      // Save the PDF
-      pdf.save(
-        `actuator-datasheet-${data.header.actuatorPartNumber || "unknown"}.pdf`
-      );
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      alert("Error generating PDF. Please try again.");
+    const imgData = canvas.toDataURL("image/png");
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    
+    // Calculate the aspect ratio of the content
+    const contentAspectRatio = canvas.width / canvas.height;
+    const pageAspectRatio = pdfWidth / pdfHeight;
+    
+    let finalWidth, finalHeight, xPos = 0, yPos = 0;
+    
+    if (contentAspectRatio > pageAspectRatio) {
+      // Content is wider - fit to width
+      finalWidth = pdfWidth;
+      finalHeight = pdfWidth / contentAspectRatio;
+      yPos = (pdfHeight - finalHeight) / 2;
+    } else {
+      // Content is taller - fit to height
+      finalHeight = pdfHeight;
+      finalWidth = pdfHeight * contentAspectRatio;
+      xPos = (pdfWidth - finalWidth) / 2;
     }
-  };
+    
+    // Add the image to the PDF
+    pdf.addImage(imgData, "PNG", xPos, yPos, finalWidth, finalHeight, undefined, 'FAST');
+
+    // Save the PDF
+    pdf.save(`actuator-datasheet-${data.header.actuatorPartNumber || "unknown"}.pdf`);
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    alert("Error generating PDF. Please try again.");
+  }
+};
 
   return (
     <>
     <div
       style={{
-        fontFamily: "Arial, sans-serif",
-        fontSize: "11px",
-        padding: "20px",
-        boxShadow: "0 0 5px rgba(0, 0, 0, 0.2)",
-        borderRadius: "10px",
-      }}
+          fontFamily: "Arial, sans-serif",
+          fontSize: "11px",
+          display: "flex",
+          justifyContent: "center",
+        }}
     >
       
       {/* Main Datasheet Container */}
       <div
         id="datasheet-container"
         style={{
-          backgroundColor: "white",
-          fontSize: "12px",
-          padding: "10px",
-          overflow: "hidden", // Prevent content from overflowing
-        }}
+            backgroundColor: "white",
+            width: "190mm", // Slightly less than A4 width to account for margins
+            fontSize: "12px",
+            padding: "10px",
+            overflow: "hidden",
+            boxSizing: "border-box",
+          }}
       >
         {/* Header Section */}
         <table
@@ -185,8 +187,7 @@ const DatasheetPDFGenerator = () => {
                     color: "#0D47A1",
                     fontWeight: "bold",
                     fontSize: "13px",
-                    marginBottom: "3px",
-                    borderBottom: "1px solid black",
+                    marginBottom: "8px",
                   }}
                 >
                   Actuator Sizing Data
@@ -201,7 +202,7 @@ const DatasheetPDFGenerator = () => {
                   width: "25%",
                 }}
               >
-                <div style={{ fontWeight: "bold", marginBottom: "3px",borderBottom: "1px solid black", }}>
+                <div style={{ fontWeight: "bold", marginBottom: "8px"}}>
                   {data.header.docRef}
                 </div>
                 <div style={{ fontSize: "9px" }}>
@@ -489,7 +490,7 @@ const DatasheetPDFGenerator = () => {
             <tr>
               <td
                 style={{
-                  borderRight: "1px solid black",
+                  
                   padding: "4px",
                   textAlign: "center",
                   fontSize: "9px",
@@ -500,7 +501,7 @@ const DatasheetPDFGenerator = () => {
               </td>
               <td
                 style={{
-                  borderRight: "1px solid black",
+                  
                   padding: "4px",
                   textAlign: "center",
                   fontSize: "9px",
@@ -514,7 +515,7 @@ const DatasheetPDFGenerator = () => {
               </td>
               <td
                 style={{
-                  borderRight: "1px solid black",
+                  
                   padding: "4px",
                   textAlign: "center",
                   fontSize: "9px",

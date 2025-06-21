@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React, {  useState } from "react";
+
 
 function Home() {
   const [actuators, setActuators] = useState([]);
@@ -7,23 +7,7 @@ function Home() {
   const [type, setType] = useState("");
   const [size, setSize] = useState("");
 
-  const fetchActuators = async () => {
-    try {
-      const params = {};
-      if (sort) params.sort = sort;
-      if (type) params.type = type;
-      if (size) params.size = size;
-
-      const response = await axios.get("http://localhost:5000/api/valve/actuator_data", { params });
-      setActuators(response.data);
-    } catch (error) {
-      console.error("Error fetching actuators:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchActuators();
-  }, [sort, type, size]);
+  
 
   return (
     <div className="p-6">

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { createContext } from "react";
+import { CHECK_TOKEN, LOGIN_API } from "../utils/constants/Api";
 
 
 const AuthContext = createContext();
@@ -10,7 +11,7 @@ const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         if(token){
-            fetch("http://localhost:5000/api/auth/me", {
+            fetch(CHECK_TOKEN, {
                 method: "GET",
                 headers: {
                     Authorization: `Bearer ${token}`
@@ -23,7 +24,7 @@ const AuthProvider = ({ children }) => {
     }, [token]);
 
     const login = async (email , password) => {
-        const res = await fetch("http://localhost:5000/api/auth/login" ,{
+        const res = await fetch(LOGIN_API ,{
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

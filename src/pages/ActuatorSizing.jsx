@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { GETALL_OPERATINGPRESSURE, GETALL_VALVETYPES } from "../utils/constants/Api";
 
 const EditableSelect = ({
   options,
@@ -148,13 +149,11 @@ const FailSafeCondition = ({ formData, handleFormFieldChange }) => (
           </label>
         </div>
       </div>
-
-      
     </div>
   </div>
 );
 
-export default function ActuatorSizing({setActiveTab , setShowDatasheet}) {
+export default function ActuatorSizing({ setActiveTab, setShowDatasheet }) {
   const [showButtons, setShowButtons] = useState(false);
   const [valueCount, setValueCount] = useState(6);
   const [valveTypes, setValveTypes] = useState([]);
@@ -186,8 +185,6 @@ export default function ActuatorSizing({setActiveTab , setShowDatasheet}) {
     springMin: "",
     springEnd: "",
   });
-
-  const [isAutoPopulating, setIsAutoPopulating] = useState(false);
 
   const handleChange = (e) => {
     const selected = parseInt(e.target.value);
@@ -269,84 +266,12 @@ export default function ActuatorSizing({setActiveTab , setShowDatasheet}) {
     );
   };
 
-  // Auto-populate function with improved error handling
-  const autoPopulateFields = async (breakToOpenValue) => {
-    if (!breakToOpenValue || isAutoPopulating) return;
-
-    setAlert(null);
-    setIsAutoPopulating(true);
-
-    try {
-      const response = await fetch(
-        `http://localhost:5000/api/valve/actutors?breakToOpen=${breakToOpenValue}`
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-
-        console.log("Received data:", data);
-
-        if (data && data.length > 0) {
-          const actuatorData = data[0];
-
-          setFormData((prev) => ({
-            ...prev,
-            supplyPressure: actuatorData.supplyPressure?.toString() || "",
-            actuatorType: actuatorData.actuatorType || "Double Acting",
-            yokeType: actuatorData.yokeType || "",
-            actuatorModel: actuatorData.actuatorModel || "",
-            runToOpen: actuatorData.runToOpen?.toString() || "",
-            endToOpen: actuatorData.endToOpen?.toString() || "",
-            breakToClose: actuatorData.breakToClose?.toString() || "",
-            runToClose: actuatorData.runToClose?.toString() || "",
-            endToClose: actuatorData.endToClose?.toString() || "",
-          }));
-
-          showAlert("Data auto-populated successfully!", "success");
-          console.log("Auto-populated data:", actuatorData);
-        } else {
-          // If no API data found, try auto-calculation based on valve type
-          if (selectedValveType) {
-            autoCalculateTorqueValues(breakToOpenValue, selectedValveType);
-          } else {
-            showAlert(
-              `No actuator data found for Break to Open value: ${breakToOpenValue}`,
-              "error"
-            );
-          }
-        }
-      } else {
-        throw new Error(`Server responded with status: ${response.status}`);
-      }
-    } catch (error) {
-      console.error("Error auto-populating fields:", error);
-      // Fallback to auto-calculation if API fails
-      if (selectedValveType) {
-        autoCalculateTorqueValues(breakToOpenValue, selectedValveType);
-      } else {
-        showAlert(
-          "Failed to fetch actuator data. Please select a valve type for auto-calculation.",
-          "error"
-        );
-      }
-    } finally {
-      setIsAutoPopulating(false);
-    }
-  };
-
   // Handle torque input changes
   const handleTorqueChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
-  };
-
-  // Handle break to open blur event
-  const handleBreakToOpenBlur = () => {
-    if (formData.breakToOpen && formData.breakToOpen.trim() !== "") {
-      autoPopulateFields(formData.breakToOpen.trim());
-    }
   };
 
   // Handle form field changes
@@ -363,6 +288,16 @@ export default function ActuatorSizing({setActiveTab , setShowDatasheet}) {
     // If Break to Open already has a value, recalculate
     if (formData.breakToOpen && formData.breakToOpen.trim() !== "") {
       autoCalculateTorqueValues(formData.breakToOpen.trim(), valveType);
+    }
+  };
+
+  const handleBreakToOpenBlur = () => {
+    if (
+      formData.breakToOpen &&
+      formData.breakToOpen.trim() !== "" &&
+      selectedValveType
+    ) {
+      autoCalculateTorqueValues(formData.breakToOpen.trim(), selectedValveType);
     }
   };
 
@@ -394,10 +329,8 @@ export default function ActuatorSizing({setActiveTab , setShowDatasheet}) {
     showAlert("All data cleared successfully!", "info");
   };
 
-  
-
   useEffect(() => {
-    fetch("http://localhost:5000/api/valve")
+    fetch(GETALL_VALVETYPES)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch valve types");
         return res.json();
@@ -413,7 +346,7 @@ export default function ActuatorSizing({setActiveTab , setShowDatasheet}) {
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/valve/operating-pressure")
+    fetch(GETALL_OPERATINGPRESSURE)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch operating pressures");
         return res.json();
@@ -522,10 +455,12 @@ export default function ActuatorSizing({setActiveTab , setShowDatasheet}) {
             <div className="grid grid-cols-2 gap-4 mb-5">
               {/* Supply Pressure */}
               <div>
-                <label className="font-semibold block mb-2 text-[12px]">Supply Pressure:</label>
+                <label className="font-semibold block mb-2 text-[12px]">
+                  Supply Pressure:
+                </label>
                 <div className="flex items-center gap-2">
                   <select
-                    className="bg-[#d9d9d9] text-[#0D47A1] px-2 py-1 rounded w-[100px]"
+                    className="bg-[#d9d9d9] text-black px-2 py-1 rounded w-[100px]"
                     value={formData.supplyPressure}
                     onChange={(e) =>
                       handleFormFieldChange("supplyPressure", e.target.value)
@@ -577,7 +512,9 @@ export default function ActuatorSizing({setActiveTab , setShowDatasheet}) {
 
             {/* Yoke Type */}
             <div className="flex items-center space-x-4 border border-gray-400 rounded p-3 w-fit">
-              <label className="font-semibold text-[#0D47A1] text-[12px]">Yoke Type:</label>
+              <label className="font-semibold text-[#0D47A1] text-[12px]">
+                Yoke Type:
+              </label>
               {["Preferred", "Symmetric", "Canted"].map((type) => (
                 <label
                   key={type}
@@ -690,8 +627,9 @@ export default function ActuatorSizing({setActiveTab , setShowDatasheet}) {
             </button>
             {showButtons && (
               <div className="flex gap-4 mt-4">
-                <button className="bg-[#0D47A1] text-white px-4 py-2 rounded font-semibold hover:bg-[#0d52a1]"
-                onClick={handleActuatorConfiguration}
+                <button
+                  className="bg-[#0D47A1] text-white px-4 py-2 rounded font-semibold hover:bg-[#0d52a1]"
+                  onClick={handleActuatorConfiguration}
                 >
                   Actuator Configuration
                 </button>
@@ -760,27 +698,18 @@ export default function ActuatorSizing({setActiveTab , setShowDatasheet}) {
                   key={i}
                   label={label}
                   unit="Nm"
-                  value={formData[fieldKey]}
-                  onChange={(e) => handleTorqueChange(fieldKey, e.target.value)}
                   onBlur={
                     label === "Break to Open"
                       ? handleBreakToOpenBlur
                       : undefined
                   }
-                  className={`w-24 h-7 bg-gray-200 rounded border-none ml-[1px] ${
-                    label === "Break to Open" && isAutoPopulating
-                      ? "bg-yellow-100"
-                      : ""
-                  }`}
+                  value={formData[fieldKey]}
+                  onChange={(e) => handleTorqueChange(fieldKey, e.target.value)}
+                  className={`w-24 h-7 bg-gray-200 rounded border-none ml-[1px] `}
                 />
               );
             })}
             <div className="mt-2 text-sm text-gray-500">(Seating)</div>
-            {isAutoPopulating && (
-              <div className="mt-2 text-sm text-blue-600">
-                Auto-calculating...
-              </div>
-            )}
           </div>
 
           <div>
