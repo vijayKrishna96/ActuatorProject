@@ -311,6 +311,12 @@ export default function ActuatorSizing({ setActiveTab, setShowDatasheet }) {
 
   // API call for actuator selection
   const handleSelectActuator = useCallback(async () => {
+    if (!ACTUATOR_PROXY_API) {
+      showAlert("API endpoint not configured", "error");
+      console.error("ACTUATOR_PROXY_API environment variable is not set");
+      return;
+    }
+
     if (!formData.supplyPressure || !selectedValveType || !formData.yokeType) {
       showAlert("Please fill all required fields", "error");
       return;
@@ -328,14 +334,11 @@ export default function ActuatorSizing({ setActiveTab, setShowDatasheet }) {
     };
 
     try {
-      const response = await fetch(
-        ACTUATOR_PROXY_API,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(requestData),
-        }
-      );
+      const response = await fetch(ACTUATOR_PROXY_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestData),
+      });
 
       if (!response.ok) throw new Error("Failed to fetch actuator data");
 
@@ -675,7 +678,6 @@ export default function ActuatorSizing({ setActiveTab, setShowDatasheet }) {
               const fieldKey = TORQUE_FIELD_MAPPING[label];
               return (
                 <div key={i} className="mb-3">
-                  
                   {/* adds vertical space below each field */}
                   <InputField
                     label={label}
