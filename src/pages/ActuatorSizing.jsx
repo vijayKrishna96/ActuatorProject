@@ -1,28 +1,30 @@
-import React, { useState, useEffect } from "react";
-import { GETALL_OPERATINGPRESSURE, GETALL_VALVETYPES } from "../utils/constants/Api";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  ACTUATOR_PROXY_API,
+  GETALL_OPERATINGPRESSURE,
+  GETALL_VALVETYPES,
+} from "../utils/constants/Api";
 
+// Reusable Components
 const EditableSelect = ({
   options,
   listId,
-  defaultValue,
   value,
   onChange,
   className = "bg-gray-200 rounded px-2 py-1 w-32",
 }) => {
-  const [inputValue, setInputValue] = useState(value || defaultValue || "");
+  const [inputValue, setInputValue] = useState(value || "");
 
   useEffect(() => {
     if (value !== undefined && value !== inputValue) {
       setInputValue(value);
     }
-  }, [value]);
+  }, [value, inputValue]);
 
   const handleInputChange = (e) => {
     const newValue = e.target.value;
     setInputValue(newValue);
-    if (onChange) {
-      onChange(newValue);
-    }
+    onChange?.(newValue);
   };
 
   return (
@@ -85,7 +87,6 @@ const InputField = ({
   </div>
 );
 
-// Alert Component
 const Alert = ({ message, type = "error", onClose }) => (
   <div
     className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
@@ -108,50 +109,135 @@ const Alert = ({ message, type = "error", onClose }) => (
   </div>
 );
 
-// Fail Safe Condition Component
-const FailSafeCondition = ({ formData, handleFormFieldChange }) => (
-  <div className=" p-4  rounded-lg space-y-4 text-[#8c001a]">
-    <h2 className="font-bold text-sm">Fail Safe Condition</h2>
+const RadioGroup = ({
+  name,
+  options,
+  value,
+  onChange,
+  className = "flex flex-col space-y-2",
+}) => (
+  <div className={className}>
+    {options.map((option) => (
+      <label key={option.value} className="flex items-center gap-2 text-[12px]">
+        <input
+          type="radio"
+          name={name}
+          value={option.value}
+          checked={value === option.value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        {option.label}
+      </label>
+    ))}
+  </div>
+);
 
-    <div className="space-y-4">
-      {/* Fail Safe Action */}
-      <div>
-        <label className="font-bold block mb-2">Fail Safe Action:</label>
-        <div className="flex flex-col text-black space-y-2">
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="failSafeAction"
-              value="Fail Close (Fail Clockwise - FCW)"
-              checked={
-                formData.failSafeAction === "Fail Close (Fail Clockwise - FCW)"
-              }
-              onChange={(e) =>
-                handleFormFieldChange("failSafeAction", e.target.value)
-              }
-            />
-            Fail Close (Fail Clockwise - FCW)
-          </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="failSafeAction"
-              value="Fail Open (Fail Counter Clockwise - FCCW)"
-              checked={
-                formData.failSafeAction ===
-                "Fail Open (Fail Counter Clockwise - FCCW)"
-              }
-              onChange={(e) =>
-                handleFormFieldChange("failSafeAction", e.target.value)
-              }
-            />
-            Fail Open (Fail Counter Clockwise - FCCW)
-          </label>
-        </div>
-      </div>
+const FailSafeCondition = ({ formData, handleFormFieldChange }) => (
+  <div className="p-4 rounded-lg space-y-4 text-[#8c001a]">
+    <h2 className="font-bold text-sm">Fail Safe Condition</h2>
+    <div>
+      <label className="font-bold block mb-2">Fail Safe Action:</label>
+      <RadioGroup
+        name="failSafeAction"
+        value={formData.failSafeAction}
+        onChange={(value) => handleFormFieldChange("failSafeAction", value)}
+        options={[
+          {
+            value: "Fail Close (Fail Clockwise - FCW)",
+            label: "Fail Close (Fail Clockwise - FCW)",
+          },
+          {
+            value: "Fail Open (Fail Counter Clockwise - FCCW)",
+            label: "Fail Open (Fail Counter Clockwise - FCCW)",
+          },
+        ]}
+        className="flex flex-col text-black space-y-2"
+      />
     </div>
   </div>
 );
+
+// Constants
+const VALVE_TORQUE_RATIOS = {
+  ball: {
+    runToOpen: 0.75,
+    endToOpen: 0.8,
+    breakToClose: 0.8,
+    runToClose: 0.75,
+    endToClose: 0.9,
+  },
+  butterfly: {
+    runToOpen: 0.3,
+    endToOpen: 0.3,
+    breakToClose: 0.3,
+    runToClose: 0.3,
+    endToClose: 1.0,
+  },
+};
+
+const TORQUE_LABELS = {
+  valve: [
+    "Break to Open",
+    "Run to Open",
+    "End to Open",
+    "Break to Close",
+    "Run to Close",
+    "End to Close",
+  ],
+  actuator: [
+    "Pneumatic Start",
+    "Pneumatic Min",
+    "Pneumatic End",
+    "Spring Start",
+    "Spring Min",
+    "Spring End",
+  ],
+};
+
+const TORQUE_FIELD_MAPPING = {
+  "Break to Open": "breakToOpen",
+  "Run to Open": "runToOpen",
+  "End to Open": "endToOpen",
+  "Break to Close": "breakToClose",
+  "Run to Close": "runToClose",
+  "End to Close": "endToClose",
+  "Pneumatic Start": "pneumaticStart",
+  "Pneumatic Min": "pneumaticMin",
+  "Pneumatic End": "pneumaticEnd",
+  "Spring Start": "springStart",
+  "Spring Min": "springMin",
+  "Spring End": "springEnd",
+};
+
+const INITIAL_FORM_DATA = {
+  supplyPressure: "",
+  actuatorType: "Double Acting",
+  yokeType: "",
+  actuatorModel: "",
+  actuatorConfig: "",
+  ped: "",
+  failSafeAction: "",
+  breakToOpen: "",
+  runToOpen: "",
+  endToOpen: "",
+  breakToClose: "",
+  runToClose: "",
+  endToClose: "",
+  pneumaticStart: "",
+  pneumaticMin: "",
+  pneumaticEnd: "",
+  springStart: "",
+  springMin: "",
+  springEnd: "",
+  actualSF: {
+    pneumaticStart: "",
+    pneumaticMid: "",
+    pneumaticEnd: "",
+    springStart: "",
+    springMid: "",
+    springEnd: "",
+  },
+};
 
 export default function ActuatorSizing({ setActiveTab, setShowDatasheet }) {
   const [showButtons, setShowButtons] = useState(false);
@@ -160,224 +246,187 @@ export default function ActuatorSizing({ setActiveTab, setShowDatasheet }) {
   const [operatingPressures, setOperatingPressures] = useState([]);
   const [alert, setAlert] = useState(null);
   const [selectedValveType, setSelectedValveType] = useState("");
+  const [formData, setFormData] = useState(INITIAL_FORM_DATA);
 
-  // Form state
-  const [formData, setFormData] = useState({
-    supplyPressure: "",
-    actuatorType: "Double Acting",
-    yokeType: "",
-    actuatorModel: "",
-    actuatorConfig: "",
-    ped: "",
-    failSafeAction: "", // New field for Spring Return
-    // Torque values
-    breakToOpen: "",
-    runToOpen: "",
-    endToOpen: "",
-    breakToClose: "",
-    runToClose: "",
-    endToClose: "",
-    // Actuator torques
-    hydraulicStart: "",
-    hydraulicMin: "",
-    hydraulicEnd: "",
-    springStart: "",
-    springMin: "",
-    springEnd: "",
-  });
-
-  const handleChange = (e) => {
-    const selected = parseInt(e.target.value);
-    setValueCount(selected);
-  };
-
-  const handleActuatorConfiguration = () => {
-    console.log("handleActuatorConfiguration");
-    // Navigate to S98Part tab which shows ValveConfigInterface
-    setActiveTab("S98Part");
-    setShowDatasheet(true);
-  };
-
-  const actuatorSeries = ["S98 - Pneumatic Scotch Yoke Actuator"];
-
-  const torqueLabels = {
-    valve: [
-      "Break to Open",
-      "Run to Open",
-      "End to Open",
-      "Break to Close",
-      "Run to Close",
-      "End to Close",
-    ],
-    actuator: [
-      "Pneumatic Start",
-      "Pneumatic Min",
-      "pneumatic End",
-      "Spring Start",
-      "Spring Min",
-      "Spring End",
-    ],
-  };
-
-  // Show alert function
-  const showAlert = (message, type = "error") => {
+  // Utility functions
+  const showAlert = useCallback((message, type = "error") => {
     setAlert({ message, type });
     setTimeout(() => setAlert(null), 5000);
+  }, []);
+
+  const updateFormData = useCallback((field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  }, []);
+
+  const calculateSF = (apiValue, formValue) => {
+    const apiNum = parseFloat(apiValue);
+    const formNum = parseFloat(formValue);
+    return formNum !== 0 ? (apiNum / formNum).toFixed(2) : "N/A";
   };
 
-  // Auto-calculate torque values based on valve type and Break to Open value
-  const autoCalculateTorqueValues = (breakToOpenValue, valveType) => {
-    if (!breakToOpenValue || !valveType) return;
+  // Auto-calculate torque values
+  const autoCalculateTorqueValues = useCallback(
+    (breakToOpenValue, valveType) => {
+      if (!breakToOpenValue || !valveType) return;
 
-    const baseValue = parseFloat(breakToOpenValue);
-    if (isNaN(baseValue)) return;
+      const baseValue = parseFloat(breakToOpenValue);
+      if (isNaN(baseValue)) return;
 
-    let calculatedValues = {};
+      const ratios = VALVE_TORQUE_RATIOS[valveType.toLowerCase()];
+      if (!ratios) return;
 
-    if (valveType.toLowerCase() === "ball") {
-      // Ball valve percentages based on Image 1
-      calculatedValues = {
-        runToOpen: Math.round(baseValue * 0.75).toString(), // 75%
-        endToOpen: Math.round(baseValue * 0.8).toString(), // 80%
-        breakToClose: Math.round(baseValue * 0.8).toString(), // 80%
-        runToClose: Math.round(baseValue * 0.75).toString(), // 75%
-        endToClose: Math.round(baseValue * 0.9).toString(), // 90%
-      };
-    } else if (valveType.toLowerCase() === "butterfly") {
-      // Butterfly valve percentages based on Image 2
-      const smallValue = Math.round(baseValue * 0.3); // 30%
-      calculatedValues = {
-        runToOpen: smallValue.toString(),
-        endToOpen: smallValue.toString(),
-        breakToClose: smallValue.toString(),
-        runToClose: smallValue.toString(),
-        endToClose: baseValue.toString(), // Same as Break to Open
-      };
-    }
+      const calculatedValues = Object.entries(ratios).reduce(
+        (acc, [key, ratio]) => {
+          acc[key] = Math.round(baseValue * ratio).toString();
+          return acc;
+        },
+        {}
+      );
 
-    setFormData((prev) => ({
-      ...prev,
-      ...calculatedValues,
-    }));
-
-    showAlert(
-      `Torque values auto-calculated for ${valveType} valve!`,
-      "success"
-    );
-  };
-
-  // Handle torque input changes
-  const handleTorqueChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  // Handle form field changes
-  const handleFormFieldChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+      setFormData((prev) => ({ ...prev, ...calculatedValues }));
+      showAlert(
+        `Torque values auto-calculated for ${valveType} valve!`,
+        "success"
+      );
+    },
+    [showAlert]
+  );
 
   // Handle valve type selection
-  const handleValveTypeChange = (valveType) => {
-    setSelectedValveType(valveType);
-    // If Break to Open already has a value, recalculate
-    if (formData.breakToOpen && formData.breakToOpen.trim() !== "") {
-      autoCalculateTorqueValues(formData.breakToOpen.trim(), valveType);
-    }
-  };
+  const handleValveTypeChange = useCallback(
+    (valveType) => {
+      setSelectedValveType(valveType);
+      if (formData.breakToOpen?.trim()) {
+        autoCalculateTorqueValues(formData.breakToOpen.trim(), valveType);
+      }
+    },
+    [formData.breakToOpen, autoCalculateTorqueValues]
+  );
 
-  const handleBreakToOpenBlur = () => {
-    if (
-      formData.breakToOpen &&
-      formData.breakToOpen.trim() !== "" &&
-      selectedValveType
-    ) {
+  const handleBreakToOpenBlur = useCallback(() => {
+    if (formData.breakToOpen?.trim() && selectedValveType) {
       autoCalculateTorqueValues(formData.breakToOpen.trim(), selectedValveType);
     }
-  };
+  }, [formData.breakToOpen, selectedValveType, autoCalculateTorqueValues]);
 
-  // Clear all form data
-  const clearAllData = () => {
-    setFormData({
-      supplyPressure: "",
-      actuatorType: "Double Acting",
-      yokeType: "",
-      actuatorModel: "",
-      actuatorConfig: "",
-      ped: "",
-      failSafeAction: "",
-      breakToOpen: "",
-      runToOpen: "",
-      endToOpen: "",
-      breakToClose: "",
-      runToClose: "",
-      endToClose: "",
-      hydraulicStart: "",
-      hydraulicMin: "",
-      hydraulicEnd: "",
-      springStart: "",
-      springMin: "",
-      springEnd: "",
-    });
+  // API call for actuator selection
+  const handleSelectActuator = useCallback(async () => {
+    if (!formData.supplyPressure || !selectedValveType || !formData.yokeType) {
+      showAlert("Please fill all required fields", "error");
+      return;
+    }
+
+    const requestData = {
+      actuatorType:
+        formData.actuatorType === "Spring Return" ? "Spring" : "Double",
+      actuatorYokeType: formData.yokeType,
+      operatingPressure: parseFloat(formData.supplyPressure),
+      endCloseValue: parseFloat(formData.endToClose) || 0,
+      failSafeValue: formData.failSafeAction.includes("Fail Close")
+        ? "FailClose"
+        : "FailOpen",
+    };
+
+    try {
+      const response = await fetch(
+        ACTUATOR_PROXY_API,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestData),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to fetch actuator data");
+
+      const data = await response.json();
+      console.log("API Response:", data);
+
+      // Fixed: Use correct property names from API response
+      setFormData((prev) => ({
+        ...prev,
+        actuatorModel: data.actuatorName,
+        pneumaticStart:
+          data.pneumaticStart?.toString() ||
+          data.pnuematicStart?.toString() ||
+          "",
+        pneumaticMin:
+          data.pneumaticMid?.toString() || data.pnuematicMid?.toString() || "",
+        pneumaticEnd:
+          data.pneumaticEnd?.toString() || data.pnuematicEnd?.toString() || "",
+        springStart: data.springStart?.toString() || "",
+        springMin: data.springMid?.toString() || "",
+        springEnd: data.springEnd?.toString() || "",
+        actualSF: {
+          pneumaticStart: calculateSF(
+            data.pneumaticStart || data.pnuematicStart,
+            prev.breakToOpen
+          ),
+          pneumaticMid: calculateSF(
+            data.pneumaticMid || data.pnuematicMid,
+            prev.runToOpen
+          ),
+          pneumaticEnd: calculateSF(
+            data.pneumaticEnd || data.pnuematicEnd,
+            prev.endToOpen
+          ),
+          springStart: calculateSF(data.springStart, prev.breakToClose),
+          springMid: calculateSF(data.springMid, prev.runToClose),
+          springEnd: calculateSF(data.springEnd, prev.endToClose),
+        },
+      }));
+
+      showAlert("Actuator selected successfully!", "success");
+      setShowButtons(true);
+    } catch (error) {
+      console.error("Error selecting actuator:", error);
+      showAlert("Failed to select actuator", "error");
+    }
+  }, [formData, selectedValveType, showAlert]);
+
+  const clearAllData = useCallback(() => {
+    setFormData(INITIAL_FORM_DATA);
     setSelectedValveType("");
     setAlert(null);
     showAlert("All data cleared successfully!", "info");
-  };
+  }, [showAlert]);
 
+  const handleActuatorConfiguration = useCallback(() => {
+    setActiveTab("S98Part");
+    setShowDatasheet(true);
+  }, [setActiveTab, setShowDatasheet]);
+
+  // Data fetching
   useEffect(() => {
-    fetch(GETALL_VALVETYPES)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch valve types");
-        return res.json();
-      })
-      .then((data) => {
-        console.log(data, "valve");
-        setValveTypes(data);
-      })
-      .catch((err) => {
-        console.error("Error fetching valve types:", err);
-        showAlert("Failed to load valve types", "error");
-      });
-  }, []);
+    const fetchData = async () => {
+      try {
+        const [valveTypesRes, operatingPressuresRes] = await Promise.all([
+          fetch(GETALL_VALVETYPES),
+          fetch(GETALL_OPERATINGPRESSURE),
+        ]);
 
-  useEffect(() => {
-    fetch(GETALL_OPERATINGPRESSURE)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch operating pressures");
-        return res.json();
-      })
-      .then((data) => {
-        setOperatingPressures(data);
-      })
-      .catch((err) => {
-        console.error("Error fetching operating pressures:", err);
-        showAlert("Failed to load operating pressures", "error");
-      });
-  }, []);
+        if (!valveTypesRes.ok || !operatingPressuresRes.ok) {
+          throw new Error("Failed to fetch data");
+        }
 
-  const torqueFieldMapping = {
-    "Break to Open": "breakToOpen",
-    "Run to Open": "runToOpen",
-    "End to Open": "endToOpen",
-    "Break to Close": "breakToClose",
-    "Run to Close": "runToClose",
-    "End to Close": "endToClose",
-    "Hydraulic Start": "hydraulicStart",
-    "Hydraulic Min": "hydraulicMin",
-    "Hydraulic End": "hydraulicEnd",
-    "Spring Start": "springStart",
-    "Spring Min": "springMin",
-    "Spring End": "springEnd",
-  };
+        const [valveTypesData, operatingPressuresData] = await Promise.all([
+          valveTypesRes.json(),
+          operatingPressuresRes.json(),
+        ]);
+
+        setValveTypes(valveTypesData);
+        setOperatingPressures(operatingPressuresData);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        showAlert("Failed to load data", "error");
+      }
+    };
+
+    fetchData();
+  }, [showAlert]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4  text-[12px] font-sans min-h-screen">
-      {/* Alert Component */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 text-[12px] font-sans min-h-screen">
       {alert && (
         <Alert
           message={alert.message}
@@ -391,7 +440,7 @@ export default function ActuatorSizing({ setActiveTab, setShowDatasheet }) {
         <div className="flex justify-between items-start">
           <div className="w-[50%] text-black">
             <div className="flex justify-between items-center mb-2">
-              <p className=" font-bold text-[#08549c] text-[12px] ">
+              <p className="font-bold text-[#08549c] text-[12px]">
                 Default Sizing Units
               </p>
               <button
@@ -428,7 +477,7 @@ export default function ActuatorSizing({ setActiveTab, setShowDatasheet }) {
                 className="flex items-center justify-between mt-10"
               >
                 <div className="flex items-center space-x-3">
-                  <label className="flex items-center space-x-1 ">
+                  <label className="flex items-center space-x-1">
                     <input type="radio" name="stemUnit" />
                     <span>Inch</span>
                   </label>
@@ -446,14 +495,14 @@ export default function ActuatorSizing({ setActiveTab, setShowDatasheet }) {
           </div>
         </div>
       </div>
-      {/* /* Actuator Selector - Original */}
+
+      {/* Actuator Selector */}
       <div className="bg-white p-4 shadow-lg rounded-lg space-y-4 text-[#0D47A1] text-[12px]">
-        <h2 className="font-bold ">Actuator Selector</h2>
+        <h2 className="font-bold">Actuator Selector</h2>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
             <div className="grid grid-cols-2 gap-4 mb-5">
-              {/* Supply Pressure */}
               <div>
                 <label className="font-semibold block mb-2 text-[12px]">
                   Supply Pressure:
@@ -463,7 +512,7 @@ export default function ActuatorSizing({ setActiveTab, setShowDatasheet }) {
                     className="bg-[#d9d9d9] text-black px-2 py-1 rounded w-[100px]"
                     value={formData.supplyPressure}
                     onChange={(e) =>
-                      handleFormFieldChange("supplyPressure", e.target.value)
+                      updateFormData("supplyPressure", e.target.value)
                     }
                   >
                     <option value="">Select</option>
@@ -476,85 +525,53 @@ export default function ActuatorSizing({ setActiveTab, setShowDatasheet }) {
                   <span className="text-black">bar</span>
                 </div>
               </div>
-              {/* Actuator Type Selection */}
               <div className="mt-6">
                 <label className="font-semibold block mb-2 text-[#0D47A1] text-[12px]">
                   Actuator Type:
                 </label>
-                <div className="flex flex-col text-black space-y-1">
-                  <label className="flex items-center gap-2 text-[12px]">
-                    <input
-                      type="radio"
-                      name="actuatorType"
-                      value="Spring Return"
-                      checked={formData.actuatorType === "Spring Return"}
-                      onChange={(e) =>
-                        handleFormFieldChange("actuatorType", e.target.value)
-                      }
-                    />
-                    Spring Return
-                  </label>
-                  <label className="flex items-center gap-2 text-[12px]">
-                    <input
-                      type="radio"
-                      name="actuatorType"
-                      value="Double Acting"
-                      checked={formData.actuatorType === "Double Acting"}
-                      onChange={(e) =>
-                        handleFormFieldChange("actuatorType", e.target.value)
-                      }
-                    />
-                    Double Acting
-                  </label>
-                </div>
+                <RadioGroup
+                  name="actuatorType"
+                  value={formData.actuatorType}
+                  onChange={(value) => updateFormData("actuatorType", value)}
+                  options={[
+                    { value: "Spring Return", label: "Spring Return" },
+                    { value: "Double Acting", label: "Double Acting" },
+                  ]}
+                  className="flex flex-col text-black space-y-1"
+                />
               </div>
             </div>
 
-            {/* Yoke Type */}
             <div className="flex items-center space-x-4 border border-gray-400 rounded p-3 w-fit">
               <label className="font-semibold text-[#0D47A1] text-[12px]">
                 Yoke Type:
               </label>
-              {["Preferred", "Symmetric", "Canted"].map((type) => (
-                <label
-                  key={type}
-                  className="flex items-center gap-2 text-black text-[12px]"
-                >
-                  <input
-                    type="radio"
-                    name="yokeType"
-                    value={type}
-                    checked={formData.yokeType === type}
-                    onChange={(e) =>
-                      handleFormFieldChange("yokeType", e.target.value)
-                    }
-                  />
-                  {type}
-                </label>
-              ))}
+              <RadioGroup
+                name="yokeType"
+                value={formData.yokeType}
+                onChange={(value) => updateFormData("yokeType", value)}
+                options={[
+                  { value: "Preferred", label: "Preferred" },
+                  { value: "Symmetric", label: "Symmetric" },
+                  { value: "Canted", label: "Canted" },
+                ]}
+                className="flex space-x-4"
+              />
             </div>
           </div>
 
-          {/* Actuator Series */}
           <div>
             <label className="font-bold block mb-2">Actuator Series:</label>
             <div className="flex flex-col text-black space-y-1">
-              {actuatorSeries.map((series, i) => (
-                <label key={i} className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="actuatorSeries"
-                    defaultChecked={series.includes("S98")}
-                  />
-                  {series}
-                </label>
-              ))}
+              <label className="flex items-center gap-2">
+                <input type="radio" name="actuatorSeries" defaultChecked />
+                S98 - Pneumatic Scotch Yoke Actuator
+              </label>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          {/* Actuator Selected */}
           <div>
             <label className="font-semibold block mb-2 text-[#0D47A1] text-[12px]">
               Actuator Selected
@@ -567,61 +584,42 @@ export default function ActuatorSizing({ setActiveTab, setShowDatasheet }) {
                   className="w-[120px] bg-[#d9d9d9] px-2 py-1 rounded"
                   value={formData.actuatorModel}
                   onChange={(e) =>
-                    handleFormFieldChange("actuatorModel", e.target.value)
+                    updateFormData("actuatorModel", e.target.value)
                   }
                 />
               </div>
             </div>
           </div>
 
-          {/* Actuator Configuration */}
-          {/* Conditional Rendering based on Actuator Type */}
           {formData.actuatorType === "Spring Return" ? (
             <FailSafeCondition
               formData={formData}
-              handleFormFieldChange={handleFormFieldChange}
+              handleFormFieldChange={updateFormData}
             />
           ) : (
             <div>
               <label className="font-bold block mb-2 text-[#0D47A1] text-[12px]">
                 Actuator Configurator
               </label>
-              <div className="flex flex-col space-y-1 text-black text-[12px]">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="actuatorConfig"
-                    value="Single Cylinder"
-                    checked={formData.actuatorConfig === "Single Cylinder"}
-                    onChange={(e) =>
-                      handleFormFieldChange("actuatorConfig", e.target.value)
-                    }
-                  />
-                  Single Cylinder
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="actuatorConfig"
-                    value="Dual Cylinder"
-                    checked={formData.actuatorConfig === "Dual Cylinder"}
-                    onChange={(e) =>
-                      handleFormFieldChange("actuatorConfig", e.target.value)
-                    }
-                  />
-                  Dual Cylinder
-                </label>
-              </div>
+              <RadioGroup
+                name="actuatorConfig"
+                value={formData.actuatorConfig}
+                onChange={(value) => updateFormData("actuatorConfig", value)}
+                options={[
+                  { value: "Single Cylinder", label: "Single Cylinder" },
+                  { value: "Dual Cylinder", label: "Dual Cylinder" },
+                ]}
+                className="flex flex-col space-y-1 text-black text-[12px]"
+              />
             </div>
           )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          {/* Select Button */}
           <div className="mt-4">
             <button
               className="bg-[#0D47A1] text-white px-6 py-2 rounded font-semibold hover:bg-[#5e4b91]"
-              onClick={() => setShowButtons(true)}
+              onClick={handleSelectActuator}
             >
               Select Actuator
             </button>
@@ -637,30 +635,19 @@ export default function ActuatorSizing({ setActiveTab, setShowDatasheet }) {
             )}
           </div>
 
-          {/* PED */}
           <div className="flex flex-col">
             <label className="font-bold block mb-2 text-[#8c001a]">PED</label>
             <div className="flex space-x-4 border border-gray-400 rounded px-3 py-2 text-black w-fit">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="ped"
-                  value="Non PED"
-                  checked={formData.ped === "Non PED"}
-                  onChange={(e) => handleFormFieldChange("ped", e.target.value)}
-                />
-                Non PED
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="ped"
-                  value="PED"
-                  checked={formData.ped === "PED"}
-                  onChange={(e) => handleFormFieldChange("ped", e.target.value)}
-                />
-                PED
-              </label>
+              <RadioGroup
+                name="ped"
+                value={formData.ped}
+                onChange={(value) => updateFormData("ped", value)}
+                options={[
+                  { value: "Non PED", label: "Non PED" },
+                  { value: "PED", label: "PED" },
+                ]}
+                className="flex space-x-4"
+              />
             </div>
           </div>
         </div>
@@ -676,7 +663,7 @@ export default function ActuatorSizing({ setActiveTab, setShowDatasheet }) {
               </label>
               <select
                 className="w-36 h-7 bg-gray-100 border-none rounded px-2 ml-2"
-                onChange={handleChange}
+                onChange={(e) => setValueCount(parseInt(e.target.value))}
                 value={valueCount}
               >
                 <option value={6}>6 Values</option>
@@ -684,29 +671,25 @@ export default function ActuatorSizing({ setActiveTab, setShowDatasheet }) {
               </select>
             </div>
 
-            {/* Show valve type indicator */}
-            {selectedValveType && (
-              <div className="mb-2 text-sm text-blue-600">
-                Selected: {selectedValveType} valve
-              </div>
-            )}
-
-            {torqueLabels.valve.slice(0, valueCount).map((label, i) => {
-              const fieldKey = torqueFieldMapping[label];
+            {TORQUE_LABELS.valve.slice(0, valueCount).map((label, i) => {
+              const fieldKey = TORQUE_FIELD_MAPPING[label];
               return (
-                <InputField
-                  key={i}
-                  label={label}
-                  unit="Nm"
-                  onBlur={
-                    label === "Break to Open"
-                      ? handleBreakToOpenBlur
-                      : undefined
-                  }
-                  value={formData[fieldKey]}
-                  onChange={(e) => handleTorqueChange(fieldKey, e.target.value)}
-                  className={`w-24 h-7 bg-gray-200 rounded border-none ml-[1px] `}
-                />
+                <div key={i} className="mb-3">
+                  
+                  {/* adds vertical space below each field */}
+                  <InputField
+                    label={label}
+                    unit="Nm"
+                    onBlur={
+                      label === "Break to Open"
+                        ? handleBreakToOpenBlur
+                        : undefined
+                    }
+                    value={formData[fieldKey]}
+                    onChange={(e) => updateFormData(fieldKey, e.target.value)}
+                    className="w-24 h-7 bg-gray-200 rounded border-none ml-[1px]"
+                  />
+                </div>
               );
             })}
             <div className="mt-2 text-sm text-gray-500">(Seating)</div>
@@ -716,15 +699,15 @@ export default function ActuatorSizing({ setActiveTab, setShowDatasheet }) {
             <div className="text-[#08549c] font-semibold mb-5">
               Actuator Torques
             </div>
-            {torqueLabels.actuator.slice(0, valueCount).map((label, i) => {
-              const fieldKey = torqueFieldMapping[label];
+            {TORQUE_LABELS.actuator.slice(0, valueCount).map((label, i) => {
+              const fieldKey = TORQUE_FIELD_MAPPING[label];
               return (
                 <InputField
                   key={i}
                   label={label}
                   unit="Nm"
                   value={formData[fieldKey]}
-                  onChange={(e) => handleTorqueChange(fieldKey, e.target.value)}
+                  onChange={(e) => updateFormData(fieldKey, e.target.value)}
                 />
               );
             })}
@@ -732,14 +715,25 @@ export default function ActuatorSizing({ setActiveTab, setShowDatasheet }) {
 
           <div>
             <div className="text-[#08549c] font-semibold mb-5">Actual S.F</div>
-            {[...Array(valueCount)].map((_, i) => (
-              <div key={i} className="mb-2">
-                <input
-                  type="text"
-                  className="w-24 h-7 bg-gray-200 rounded border border-gray-300"
-                />
-              </div>
-            ))}
+            {[
+              "pneumaticStart",
+              "pneumaticMid",
+              "pneumaticEnd",
+              "springStart",
+              "springMid",
+              "springEnd",
+            ]
+              .slice(0, valueCount)
+              .map((field, i) => (
+                <div key={i} className="mb-3">
+                  <input
+                    type="text"
+                    className="w-24 h-7 bg-gray-200 rounded border border-gray-300"
+                    value={formData.actualSF[field] || ""}
+                    readOnly
+                  />
+                </div>
+              ))}
           </div>
         </div>
       </div>

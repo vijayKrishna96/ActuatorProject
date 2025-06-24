@@ -7,3 +7,4 @@ export const CHECK_TOKEN = BaseUrl + import.meta.env.VITE_CHECK_TOKEN
 //Valves
 export const GETALL_VALVETYPES = BaseUrl + import.meta.env.VITE_GETALL_VALVETYPES
 export const GETALL_OPERATINGPRESSURE = BaseUrl + import.meta.env.VITE_OPERATINGPRESSURE
+export const ACTUATOR_PROXY_API = BaseUrl + import.meta.env.VITE_ACTUATOR_PROXY
