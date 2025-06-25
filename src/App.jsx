@@ -7,13 +7,15 @@ import { Ruler } from "lucide-react";
 import { useContext } from "react";
 import {AuthContext} from "./config/AuthContext";
 import Login from "./components/Login";
+import ActuatorConfiguration from "./pages/ActuatorConfiguration";
+import Configuration from "./pages/ActuatorConfiguration";
 
 function App() {
   
 
  const { token } = useContext(AuthContext);
 
-  console.log(token);
+  
 
   return (
     <Routes>
@@ -23,7 +25,10 @@ function App() {
         ) : (
           <Route path="/" element={<Login />} />
         )}
+        
       </Route>
+              
+
     </Routes>
   );
 }

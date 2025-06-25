@@ -1,4 +1,4 @@
-// Sidebar Item Component
+// Sidebar Item Component 
 function SidebarItem({ icon, label, isActive, onClick }) {
   return (
     <div

@@ -21,6 +21,7 @@ const AuthProvider = ({ children }) => {
         .catch((err) => console.log(err));
     }
   }, [token, user]);
+  
 
   const login = async (email, password) => {
     const res = await fetch("http://localhost:5000/api/auth/login", {
