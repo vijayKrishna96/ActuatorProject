@@ -322,12 +322,15 @@ export default function ActuatorSizing({ setActiveTab, setShowDatasheet }) {
       return;
     }
 
+    const endToCloseValue = parseFloat(formData.endToClose) || 0;
+    const adjustedEndToClose = endToCloseValue * 1.25;
+
     const requestData = {
       actuatorType:
         formData.actuatorType === "Spring Return" ? "Spring" : "Double",
       actuatorYokeType: formData.yokeType,
       operatingPressure: parseFloat(formData.supplyPressure),
-      endCloseValue: parseFloat(formData.endToClose) || 0,
+      endCloseValue: adjustedEndToClose || 0,
       failSafeValue: formData.failSafeAction.includes("Fail Close")
         ? "FailClose"
         : "FailOpen",
