@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import.meta.env.VITE_FETCH_SERIES
+import.meta.env.VITE_CREATE_SERIES
 
 function Valuepage() {
   const [input, setInput] = useState("");
@@ -8,36 +10,41 @@ function Valuepage() {
 
   // Fetch all series on mount so the list is always up to date
   useEffect(() => {
-    const fetchSeries = async () => {
-      try {
-        const res = await fetch("http://localhost:5000/api/series/");
-        const data = await res.json();
-        if (data.success && Array.isArray(data.data)) {
-          setSeriesList(data.data.map(s => s.name));
-        }
-      } catch {
-        // ignore fetch error for now
+  const fetchSeries = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}${import.meta.env.VITE_FETCH_SERIES}`);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        setSeriesList(data.data.map(s => s.name));
       }
-    };
-    fetchSeries();
-  }, []);
+    } catch {
+      // ignore fetch error for now
+    }
+  };
+  fetchSeries();
+}, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     if (!input.trim()) return;
     setLoading(true);
-    try {
-      const res = await fetch("http://localhost:5000/api/series/create", {
+        try {
+      const res = await fetch(`${import.meta.env.VITE_BASE_URL}${import.meta.env.VITE_CREATE_SERIES}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({ name: input }),
       });
       const data = await res.json();
       if (data.success) {
         // Instead of just adding, fetch the updated list to avoid duplicates
-        const res2 = await fetch("http://localhost:5000/api/series/");
+        const res2 = await fetch(`${import.meta.env.VITE_BASE_URL}${import.meta.env.VITE_FETCH_SERIES}`);
         const data2 = await res2.json();
+        
+        // handle `data2` as needed...
+      
         if (data2.success && Array.isArray(data2.data)) {
           setSeriesList(data2.data.map(s => s.name));
         }
