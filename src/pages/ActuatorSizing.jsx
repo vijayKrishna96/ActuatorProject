@@ -964,7 +964,7 @@ export default function ActuatorSizing({ setActiveTab, dashboardData }) {
                       Yoke Type:
                     </span>
 
-                    <label className="flex items-center gap-1 text-[13px] mb-0">
+                    <label className="flex items-center gap-1 text-[13px] mb-0 text-gray-500">
                       <input
                         type="radio"
                         name="yokeType"
@@ -981,7 +981,7 @@ export default function ActuatorSizing({ setActiveTab, dashboardData }) {
                       Preferred
                     </label>
 
-                    <label className="flex items-center gap-1 text-[13px] mb-0 text-gray-500">
+                    <label className="flex items-center gap-1 text-[13px] mb-0 text-black">
                       <input
                         type="radio"
                         name="yokeType"
