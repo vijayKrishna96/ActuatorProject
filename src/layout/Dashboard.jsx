@@ -5,8 +5,8 @@ import PartDecode from "../pages/PartDecode";
 import S54sensor from "../pages/S54sensor";
 import S5Xmonitor from "../pages/S5Xmonitor";
 import ActuatorSizing from "../pages/ActuatorSizing";
-import Valuepage from "../pages/valuepage";
 import Configuration from "../pages/ActuatorConfiguration";
+import Valuepage from "../pages/valuepage";
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("Home");
