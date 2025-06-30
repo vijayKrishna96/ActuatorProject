@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; // <-- import useNavigate
 import Configuration from "./ActuatorConfiguration";
 import axios from "axios";
-import.meta.env.VITE_BASE_URL
-import.meta.env.VITE_VALVE_SERIES
-import.meta.env.VITE_VALVE_DATA
-import.meta.env.VITE_FETCH_CALC
+import.meta.env.VITE_BASE_URL;
+import.meta.env.VITE_VALVE_SERIES;
+import.meta.env.VITE_VALVE_DATA;
+import.meta.env.VITE_FETCH_CALC;
 
 // --- Helper Components ---
 const EditableSelect = ({
@@ -34,17 +34,27 @@ const EditableSelect = ({
 
 const RadioGroup = ({ name, options, value, onChange }) => (
   <div className="flex flex-col gap-2 mt-2">
-    {options.map((option, i) => (
-      <label key={i} className="flex items-center gap-1 text-black">
-        <input
-          type="radio"
-          name={name}
-          checked={value === option}
-          onChange={() => onChange(option)}
-        />
-        {option}
-      </label>
-    ))}
+    {options.map((option, i) => {
+      const isDisabled = option.disabled;
+      return (
+        <label
+          key={i}
+          className={`flex items-center gap-1 ${
+            isDisabled ? "text-gray-500 cursor-not-allowed" : "text-black"
+          }`}
+        >
+          <input
+            type="radio"
+            name={name}
+            value={option.value}
+            checked={value === option.value}
+            onChange={() => !isDisabled && onChange(option.value)}
+            disabled={isDisabled}
+          />
+          {option.label}
+        </label>
+      );
+    })}
   </div>
 );
 
@@ -118,90 +128,95 @@ export default function ActuatorSizing({ setActiveTab, dashboardData }) {
   const [valveCountOption, setValveCountOption] = useState("6 Values");
   const [actualSF, setActualSF] = useState(Array(6).fill(""));
   const [formData, setFormData] = useState({
-   operatingPressure: "",
-  actuatorYokeType: "Canted",
-  actuatorType: "Spring Return",
-  failSafeValue: "Fail Close (Fail Clockwise - FCW)",
-  endCloseValue: "",
-  actuatorName: "",
-  pnuematicStart: "",
-  pnuematicMid: "",
-  pnuematicEnd: "",
-  springStart: "",
-  springMid: "",
-  springEnd: "",
-  springNumber: "",
-});
+    operatingPressure: "",
+    actuatorYokeType: "Symmetric",
+    actuatorType: "Spring Return",
+    failSafeValue: "Fail Close (Fail Clockwise - FCW)",
+    endCloseValue: "",
+    actuatorName: "",
+    pnuematicStart: "",
+    pnuematicMid: "",
+    pnuematicEnd: "",
+    springStart: "",
+    springMid: "",
+    springEnd: "",
+    springNumber: "",
+  });
 
-useEffect(() => {
-  setFormData((prev) => ({
-    ...prev,
-    endCloseValue: torques[5] || "",
-  }));
-}, [torques]);
-
-console.log("Current actuatorName:", formData.actuatorName);
-
-async function handleSelectActuator() {
-  console.log("Triggering actuator selection...");
-  console.log("formData values:", formData);
-
-  if (
-    !formData.operatingPressure ||
-    !formData.actuatorType ||
-    !formData.actuatorYokeType
-  ) {
-    console.error("Please fill all required fields");
-    alert("Please fill all required fields");
-    return;
-  }
-
-  const endToCloseValue = parseFloat(formData.endToClose) || 0;
-  const adjustedEndToClose = formData.endCloseValue * 1.25;
-
-  const requestData = {
-    actuatorType: formData.actuatorType.includes("Spring Return") ? "Spring" : "Double",
-    actuatorYokeType: formData.actuatorYokeType,
-    operatingPressure: parseFloat(formData.operatingPressure),
-    failSafeValue: formData.failSafeValue.includes("Fail Close") ? "FailClose" : "FailOpen",
-    endCloseValue: adjustedEndToClose, // ✅ Use the adjusted value here
-  };
-
-  console.log("Request Data:", requestData);
-
-  try {
-     const response = await fetch(`${import.meta.env.VITE_BASE_URL}${import.meta.env.VITE_FETCH_CALC}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestData),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log("Backend Response:", data);
-
+  useEffect(() => {
     setFormData((prev) => ({
       ...prev,
-      actuatorName: data.actuatorName ?? prev.actuatorName,
-      pnuematicStart: data.pnuematicStart ?? prev.pneumaticStart,
-      pnuematicMid: data.pnuematicMid ?? prev.pneumaticMid,
-      pnuematicEnd: data.pnuematicEnd ?? prev.pneumaticEnd,
-      springStart: data.springStart ?? prev.springStart,
-      springMid: data.springMid ?? prev.springMid,
-      springEnd: data.springEnd ?? prev.springEnd,
-      springNumber: data.springNumber ?? prev.springNumber,
+      endCloseValue: torques[5] || "",
     }));
+  }, [torques]);
 
-  } catch (error) {
-    console.error("Error during actuator selection request:", error);
+  console.log("Current actuatorName:", formData.actuatorName);
+
+  async function handleSelectActuator() {
+    console.log("Triggering actuator selection...");
+    console.log("formData values:", formData);
+
+    if (
+      !formData.operatingPressure ||
+      !formData.actuatorType ||
+      !formData.actuatorYokeType
+    ) {
+      console.error("Please fill all required fields");
+      alert("Please fill all required fields");
+      return;
+    }
+
+    const endToCloseValue = parseFloat(formData.endToClose) || 0;
+    const adjustedEndToClose = formData.endCloseValue * 1.25;
+
+    const requestData = {
+      actuatorType: formData.actuatorType.includes("Spring Return")
+        ? "Spring"
+        : "Double",
+      actuatorYokeType: formData.actuatorYokeType,
+      operatingPressure: parseFloat(formData.operatingPressure),
+      failSafeValue: formData.failSafeValue.includes("Fail Close")
+        ? "FailClose"
+        : "FailOpen",
+      endCloseValue: adjustedEndToClose, // ✅ Use the adjusted value here
+    };
+
+    console.log("Request Data:", requestData);
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_BASE_URL}${import.meta.env.VITE_FETCH_CALC}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestData),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("Backend Response:", data);
+
+      setFormData((prev) => ({
+        ...prev,
+        actuatorName: data.actuatorName ?? prev.actuatorName,
+        pnuematicStart: data.pnuematicStart ?? prev.pneumaticStart,
+        pnuematicMid: data.pnuematicMid ?? prev.pneumaticMid,
+        pnuematicEnd: data.pnuematicEnd ?? prev.pneumaticEnd,
+        springStart: data.springStart ?? prev.springStart,
+        springMid: data.springMid ?? prev.springMid,
+        springEnd: data.springEnd ?? prev.springEnd,
+        springNumber: data.springNumber ?? prev.springNumber,
+      }));
+    } catch (error) {
+      console.error("Error during actuator selection request:", error);
+    }
   }
-}
-
 
   const navigate = useNavigate(); // <-- useNavigate hook for navigation
 
@@ -233,38 +248,44 @@ async function handleSelectActuator() {
   }, []);
 
   useEffect(() => {
-  const fetchValveData = async () => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_BASE_URL}${import.meta.env.VITE_VALVE_DATA}`, {
-        method: "GET",
-      });
-      const data = await res.json();
-      setValveData(data.data || []);
-    } catch (error) {
-      console.error("Failed to fetch valve data", error);
-    }
-  };
-  fetchValveData();
-}, []);
+    const fetchValveData = async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_BASE_URL}${import.meta.env.VITE_VALVE_DATA}`,
+          {
+            method: "GET",
+          }
+        );
+        const data = await res.json();
+        setValveData(data.data || []);
+      } catch (error) {
+        console.error("Failed to fetch valve data", error);
+      }
+    };
+    fetchValveData();
+  }, []);
 
+  useEffect(() => {
+    const fetchSeries = async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_BASE_URL}${
+            import.meta.env.VITE_VALVE_SERIES
+          }`,
+          {
+            method: "GET",
+          }
+        );
+        const data = await res.json();
+        setActuatorSeries(data.data ? data.data.map((s) => s.name) : []);
+      } catch (error) {
+        setActuatorSeries([]);
+        console.error("Failed to fetch actuator series", error);
+      }
+    };
 
- useEffect(() => {
-  const fetchSeries = async () => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_BASE_URL}${import.meta.env.VITE_VALVE_SERIES}`, {
-        method: "GET",
-      });
-      const data = await res.json();
-      setActuatorSeries(data.data ? data.data.map((s) => s.name) : []);
-    } catch (error) {
-      setActuatorSeries([]);
-      console.error("Failed to fetch actuator series", error);
-    }
-  };
-
-  fetchSeries();
-}, []);
-
+    fetchSeries();
+  }, []);
 
   useEffect(() => {
     if (actuatorSeries.length > 0) {
@@ -312,35 +333,35 @@ async function handleSelectActuator() {
     setTorques(newTorques);
   };
   const handleActuatorTypeChange = (option) => {
-  setFormData((prev) => ({
-    ...prev,
-    actuatorType: option,
-    failSafeValue:
-      option === "Spring Return"
-        ? "Fail Close (Fail Clockwise - FCW)"
-        : "Single Cylinder",
-  }));
-};
+    setFormData((prev) => ({
+      ...prev,
+      actuatorType: option,
+      failSafeValue:
+        option === "Spring Return"
+          ? "Fail Close (Fail Clockwise - FCW)"
+          : "Single Cylinder",
+    }));
+  };
 
-const handleFailOrConfigChange = (option) => {
-  setFormData((prev) => ({
-    ...prev,
-    failSafeValue: option,
-  }));
-};
+  const handleFailOrConfigChange = (option) => {
+    setFormData((prev) => ({
+      ...prev,
+      failSafeValue: option,
+    }));
+  };
 
-const handlePEDChange = (e) => {
-  setPedOption(e.target.value); // if you're storing PED separately
-  // Optional: also update formData if needed
-  setFormData((prev) => ({
-    ...prev,
-    pedOption: e.target.value,
-  }));
-};
+  const handlePEDChange = (e) => {
+    setPedOption(e.target.value); // if you're storing PED separately
+    // Optional: also update formData if needed
+    setFormData((prev) => ({
+      ...prev,
+      pedOption: e.target.value,
+    }));
+  };
 
-const handleStemUnitChange = (e) => {
-  setStemUnit(e.target.value); // ✅ this is okay
-};
+  const handleStemUnitChange = (e) => {
+    setStemUnit(e.target.value); // ✅ this is okay
+  };
 
   const handleStemDiameterChange = (e) => {
     setStemDiameter(e.target.value);
@@ -464,33 +485,33 @@ const handleStemUnitChange = (e) => {
   const handleActuatorConfigurationClick = () => {
     if (setActiveTab) {
       setActiveTab("S98 Part#");
-    }// Redirect to ActuatorConfiguration.jsx page/route
+    } // Redirect to ActuatorConfiguration.jsx page/route
   };
 
   const actuatorValues = [
-  formData.pnuematicStart,
-  formData.pnuematicMid,
-  formData.pnuematicEnd,
-  formData.springStart,
-  formData.springMid,
-  formData.springEnd,
-];
+    formData.pnuematicStart,
+    formData.pnuematicMid,
+    formData.pnuematicEnd,
+    formData.springStart,
+    formData.springMid,
+    formData.springEnd,
+  ];
 
-// Now it's safe to use inside useEffect
-useEffect(() => {
-  const newActualSF = actuatorValues.map((actuatorVal, i) => {
-    const valveVal = parseFloat(torques[i]);
-    const actuator = parseFloat(actuatorVal);
+  // Now it's safe to use inside useEffect
+  useEffect(() => {
+    const newActualSF = actuatorValues.map((actuatorVal, i) => {
+      const valveVal = parseFloat(torques[i]);
+      const actuator = parseFloat(actuatorVal);
 
-    if (!isNaN(valveVal) && valveVal !== 0 && !isNaN(actuator)) {
-      return (actuator / valveVal).toFixed(2); // round to 2 decimal places
-    } else {
-      return ""; // leave empty if input is invalid
-    }
-  });
+      if (!isNaN(valveVal) && valveVal !== 0 && !isNaN(actuator)) {
+        return (actuator / valveVal).toFixed(2); // round to 2 decimal places
+      } else {
+        return ""; // leave empty if input is invalid
+      }
+    });
 
-  setActualSF(newActualSF);
-}, [torques, actuatorValues]); // ✅ now this works safely
+    setActualSF(newActualSF);
+  }, [torques, actuatorValues]); // ✅ now this works safely
 
   return (
     <div className="p-4 bg-gray-100 text-[12px] font-sans min-h-screen h-screen overflow-hidden">
@@ -544,6 +565,7 @@ useEffect(() => {
                         type="text"
                         className="border rounded px-1 py-1 w-10 bg-yellow-100 text-center ml-4 font-semibold"
                         value={safetyFactor}
+                        readOnly
                         onChange={handleSafetyFactorChange}
                       />
                     </div>
@@ -621,12 +643,12 @@ useEffect(() => {
               ))}
               <div className="mt-2 text-sm text-gray-500">(Seating)</div>
             </div>
-            
+
             <div className="ml-[30px]">
               <div className="text-[#08549c] font-semibold mb-5 ">
                 Actuator Torques
               </div>
-             {actuatorTorquesLabels
+              {actuatorTorquesLabels
                 .slice(0, torqueLabels.length)
                 .map((label, i) => (
                   <InputField
@@ -637,8 +659,7 @@ useEffect(() => {
                     value={actuatorValues[i] || ""}
                     readOnly
                   />
-              ))}
-
+                ))}
             </div>
             <div>
               <div className="text-[#08549c] font-semibold mb-5 ml-[50px]">
@@ -722,17 +743,6 @@ useEffect(() => {
                   </div>
                   {/* Actuator Type  */}
                   <div>
-                    <label className="font-bold block mb-2 pt-[23px] text-[#08549c]">
-                      Actuator Type:
-                    </label>
-                    <RadioGroup
-                      name="actuatorType"
-                      options={["Spring Return", "Double Acting"]}
-                      value={formData.actuatorType}
-                      onChange={handleActuatorTypeChange}
-                    />
-                  </div>
-                  <div>
                     {/* Fail Safe Condition for Spring Return */}
                     {formData.actuatorType === "Spring Return" && (
                       <>
@@ -790,7 +800,7 @@ useEffect(() => {
                     </div>
                   </div>
                   {/* Supply Pressure vertically aligned with Actuator Type, and inline with Actuator Selected */}
-                                    <div className=" text-[#08549c] mr-[50px]">
+                  <div className=" text-[#08549c] mr-[50px]">
                     {[
                       {
                         label: "Act. Orientation",
@@ -851,58 +861,70 @@ useEffect(() => {
                   </label>
                   <div
                     className="flex flex-wrap gap-2"
-                    style={{
-                      overflow: "visible",
-                    }}
+                    style={{ overflow: "visible" }}
                   >
-                    {actuatorSeries.map((series, i) => (
-                      <label
-                        key={i}
-                        className="flex items-center gap-2 text-black"
-                        style={{
-                          marginBottom: 0,
-                          whiteSpace: "nowrap",
-                          overflow: "visible",
-                          textOverflow: "ellipsis",
-                          maxWidth: "none",
-                        }}
-                        title={series}
-                      >
-                        <input
-                          type="radio"
-                          name="series"
-                          checked={selectedSeries === series}
-                          onChange={() => setSelectedSeries(series)}
-                        />
-                        <span className="whitespace-nowrap">{series}</span>
-                      </label>
-                    ))}
+                    {actuatorSeries.map((series, i) => {
+                      const isEnabled =
+                        series === "S98 - Pneumatic Scotch Yoke Actuator";
+                      return (
+                        <label
+                          key={i}
+                          className={`flex items-center gap-2 ${
+                            isEnabled ? "text-black" : "text-gray-700"
+                          }`}
+                          style={{
+                            marginBottom: 0,
+                            whiteSpace: "nowrap",
+                            overflow: "visible",
+                            textOverflow: "ellipsis",
+                            maxWidth: "none",
+                          }}
+                          title={series}
+                        >
+                          <input
+                            type="radio"
+                            name="series"
+                            checked={selectedSeries === series}
+                            onChange={() => setSelectedSeries(series)}
+                            disabled={!isEnabled}
+                          />
+                          <span className="whitespace-nowrap">{series}</span>
+                        </label>
+                      );
+                    })}
                   </div>
                   {/* Supply Pressure below Actuator Series, inline with PED Option */}
                   <div className="flex flex-col justify-center pt-3">
-                  <label className="font-bold block text-[#08549c] ">
-                    Supply Pressure:
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <select
-                      className="bg-[#d9d9d9] text-gray-700 px-2 py-1 rounded w-[100px] mt-1"
-                      value={formData.operatingPressure}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        console.log("Selected Pressure:", value); // ✅ debug log
-                        setFormData((prev) => ({ ...prev, operatingPressure: value }));
-                      }}
-                    >
-                      <option value="">SELECT</option>
-                      {supplyPressureOptions.map((pressure, idx) => (
-                        <option key={idx} value={pressure}>
-                          {pressure}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="text-black">bar</span>
+                    <label className="font-bold block text-[#08549c] ">
+                      Supply Pressure:
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <select
+                        className="bg-[#d9d9d9] text-black px-2 py-1 rounded w-[100px] mt-1"
+                        value={formData.operatingPressure}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          console.log("Selected Pressure:", value); // ✅ debug log
+                          setFormData((prev) => ({
+                            ...prev,
+                            operatingPressure: value,
+                          }));
+                        }}
+                      >
+                        <option value="">SELECT</option>
+                        {supplyPressureOptions.map((pressure, idx) => (
+                          <option
+                            key={idx}
+                            value={pressure}
+                            disabled={pressure !== "4.0"} // 🔒 only allow "4"
+                          >
+                            {pressure}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="text-black">bar</span>
+                    </div>
                   </div>
-                </div>
                 </div>
 
                 {/* Actuator Type and Yoke Type, PED Option below */}
@@ -917,69 +939,81 @@ useEffect(() => {
                     </label>
                     <RadioGroup
                       name="actuatorType"
-                      options={["Spring Return", "Double Acting"]}
+                      options={[
+                        { label: "Spring Return", value: "Spring Return" },
+                        {
+                          label: "Double Acting",
+                          value: "Double Acting",
+                          disabled: true,
+                        },
+                      ]}
                       value={formData.actuatorType}
                       onChange={handleActuatorTypeChange}
                     />
                   </div>
                   {/* Yoke Type box (single line) */}
                   <div
-  className="border border-gray-300 rounded px-2 py-2 bg-gray-50 flex items-center gap-3 mt-6 flex-nowrap"
-  style={{
-    minWidth: 330,
-    maxWidth: 370,
-    whiteSpace: "nowrap",
-  }}
->
-  <span className="text-[#08549c] font-semibold text-[13px] mb-0">
-    Yoke Type:
-  </span>
-  <label className="flex items-center gap-1 text-[13px] mb-0">
-    <input
-      type="radio"
-      name="yokeType"
-      value="Preferred"
-      checked={formData.actuatorYokeType === "Preferred"}
-      onChange={(e) =>
-        setFormData((prev) => ({
-          ...prev,
-                  actuatorYokeType: e.target.value,
-                }))
-              }
-            />
-            Preferred
-          </label>
-          <label className="flex items-center gap-1 text-[13px] mb-0">
-            <input
-              type="radio"
-              name="yokeType"
-              value="Symmetric"
-              checked={formData.actuatorYokeType === "Symmetric"}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  actuatorYokeType: e.target.value,
-                }))
-              }
-            />
-            Symmetric
-          </label>
-          <label className="flex items-center gap-1 text-[13px] mb-0">
-            <input
-              type="radio"
-              name="yokeType"
-              value="Canted"
-              checked={formData.actuatorYokeType === "Canted"}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  actuatorYokeType: e.target.value,
-                }))
-              }
-            />
-            Canted
-          </label>
-        </div>
+                    className="border border-gray-300 rounded px-2 py-2 bg-gray-50 flex items-center gap-3 mt-6 flex-nowrap"
+                    style={{
+                      minWidth: 330,
+                      maxWidth: 370,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <span className="text-[#08549c] font-semibold text-[13px] mb-0">
+                      Yoke Type:
+                    </span>
+
+                    <label className="flex items-center gap-1 text-[13px] mb-0">
+                      <input
+                        type="radio"
+                        name="yokeType"
+                        value="Preferred"
+                        disabled
+                        checked={formData.actuatorYokeType === "Preferred"}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            actuatorYokeType: e.target.value,
+                          }))
+                        }
+                      />
+                      Preferred
+                    </label>
+
+                    <label className="flex items-center gap-1 text-[13px] mb-0 text-gray-500">
+                      <input
+                        type="radio"
+                        name="yokeType"
+                        value="Symmetric"
+                        checked={formData.actuatorYokeType === "Symmetric"}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            actuatorYokeType: e.target.value,
+                          }))
+                        }
+                      />
+                      Symmetric
+                    </label>
+
+                    <label className="flex items-center gap-1 text-[13px] mb-0 text-gray-500">
+                      <input
+                        type="radio"
+                        name="yokeType"
+                        value="Canted"
+                        disabled
+                        checked={formData.actuatorYokeType === "Canted"}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            actuatorYokeType: e.target.value,
+                          }))
+                        }
+                      />
+                      Canted
+                    </label>
+                  </div>
 
                   {/* PED Option box (single line) */}
                   <div
@@ -1027,10 +1061,25 @@ useEffect(() => {
                     options={
                       formData.actuatorType === "Spring Return"
                         ? [
-                            "Fail Close (Fail Clockwise - FCW)",
-                            "Fail Open (Fail Counter Clockwise - FCCW)",
+                            {
+                              label: "Fail Close (Fail Clockwise - FCW)",
+                              value: "Fail Close (Fail Clockwise - FCW)",
+                            },
+                            {
+                              label:
+                                "Fail Open (Fail Counter Clockwise - FCCW)",
+                              value:
+                                "Fail Open (Fail Counter Clockwise - FCCW)",
+                              disabled: true,
+                            },
                           ]
-                        : ["Single Cylinder", "Dual Cylinder"]
+                        : [
+                            {
+                              label: "Single Cylinder",
+                              value: "Single Cylinder",
+                            },
+                            { label: "Dual Cylinder", value: "Dual Cylinder" },
+                          ]
                     }
                     value={formData.failSafeValue}
                     onChange={handleFailOrConfigChange}
@@ -1044,14 +1093,14 @@ useEffect(() => {
                   <button
                     className="bg-[#08549c] text-white px-8 py-2 rounded font-semibold hover:bg-blue-800 mt-[25px]"
                     onClick={() => {
-                      setShowButtons(true);         // ✅ First action
-                      handleSelectActuator();       // ✅ Second action
+                      setShowButtons(true); // ✅ First action
+                      handleSelectActuator(); // ✅ Second action
                     }}
                   >
                     Select Actuator
                   </button>
 
-                  {showButtons && ( 
+                  {showButtons && (
                     <button
                       className="ml-0 mt-2 bg-[#08549c] text-white px-5 py-2 rounded font-semibold hover:bg-blue-800"
                       onClick={handleActuatorConfigurationClick} // <-- redirect here
@@ -1061,20 +1110,20 @@ useEffect(() => {
                   )}
                 </div>
                 {/* Actuator Selected */}
-            <div className="">
-                    <label className="font-bold block mb-2 text-[#08549c]">
-                      Actuator Selected
-                    </label>
-                    <div className="space-y-2 text-black">
-                      <input
-                        type="text"
-                        className="w-[140px] bg-[#d9d9d9] px-3 py-2 rounded"
-                        placeholder="Actuator Model"
-                        value={formData.actuatorName ?? ""} // ✅ Shows actuator name
-                        readOnly // Optional: keeps it non-editable
-                      />
-                    </div>
+                <div className="">
+                  <label className="font-bold block mb-2 text-[#08549c]">
+                    Actuator Selected
+                  </label>
+                  <div className="space-y-2 text-black">
+                    <input
+                      type="text"
+                      className="w-[140px] bg-[#d9d9d9] px-3 py-2 rounded"
+                      placeholder="Actuator Model"
+                      value={formData.actuatorName ?? ""} // ✅ Shows actuator name
+                      readOnly // Optional: keeps it non-editable
+                    />
                   </div>
+                </div>
               </div>
             </div>
           )}
